@@ -6,10 +6,11 @@
 // Module dependencies
 
 var express = require('express'),
-    mysql = require('mysql');
+    mysql = require('mysql'),
+    bodyParser = require('body-parser');
 
 var modules = {};
-    
+
 modules.Login = require('./modules/Login');
 modules.Register = require('./modules/Register');
 modules.Forgot = require('./modules/Forgot');
@@ -26,6 +27,9 @@ var pool = mysql.createPool({
 
 var app = express();
 
+// parse application/x-www-form-urlencoded 
+app.use(bodyParser.urlencoded({ extended: false }))
+
 // Routings
 
 app.get('/', function (req, res) {
@@ -33,19 +37,13 @@ app.get('/', function (req, res) {
 });
 
 var login = new modules.Login(pool);
-app.route('/login/:pl/:cb/:ak')
-    .get(login.initialize)
-    .post(login.initialize);
+app.post('/login', login.initialize);
 
 var register = new modules.Register(pool);
-app.route('/register/:pl/:cb/:ak')
-    .get(register.initialize)
-    .post(register.initialize);
+app.post('/register', register.initialize);
 
 var forgot = new modules.Forgot(pool);
-app.route('/forgot/:pl/:cb/:ak')
-    .get(forgot.initialize)
-    .post(forgot.initialize);
+app.post('/forgot', forgot.initialize);
 
 // Begin listening
 

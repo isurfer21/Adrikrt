@@ -10,47 +10,47 @@ var Forgot = function (iPool) {
 
     var isRegistered = function () {
         iPool.getConnection(function (err, connection) {
-            var queryStr = Δ.Templator.fitIn('SELECT EmailAddress FROM accounts WHERE EmailAddress="[0]";', [payload.email]);
-            connection.query(queryStr, function (err, rows) {
-                if (!err) {
-                    if (rows.length > 0) {
-                        fetchAccount();
+            connection.query('SELECT EmailAddress FROM accounts WHERE EmailAddress=?', [payload.email],
+                function (err, rows) {
+                    if (!err) {
+                        if (rows.length > 0) {
+                            fetchAccount();
+                        } else {
+                            responder.failure('This email address is not yet registered with us.');
+                            iResult.send(controller.publish(responder.get()));
+                        }
                     } else {
-                        responder.failure('This email address is not yet registered with us.');
+                        responder.failure(err);
                         iResult.send(controller.publish(responder.get()));
                     }
-                } else {
-                    responder.failure(err);
-                    iResult.send(controller.publish(responder.get()));
-                }
-                connection.release();
-            });
+                    connection.release();
+                });
         });
     };
 
     var fetchAccount = function (isReg) {
         iPool.getConnection(function (err, connection) {
-            var queryStr = Δ.Templator.fitIn('SELECT Firstname, Lastname, EmailAddress, Password FROM accounts WHERE EmailAddress="[0]" AND DateOfBirth="[1]";', [payload.email, payload.dob]);
-            connection.query(queryStr, function (err, rows) {
-                if (!err) {
-                    if (rows.length > 0) {
-                        var cargo = {
-                            name: (rows[0].Firstname + ' ' + rows[0].Lastname).trim(),
-                            email: rows[0].EmailAddress,
-                            password: rows[0].Password
+            connection.query('SELECT Firstname, Lastname, EmailAddress, Password FROM accounts WHERE EmailAddress=? AND DateOfBirth=?', [payload.email, payload.dob],
+                function (err, rows) {
+                    if (!err) {
+                        if (rows.length > 0) {
+                            var cargo = {
+                                name: (rows[0].Firstname + ' ' + rows[0].Lastname).trim(),
+                                email: rows[0].EmailAddress,
+                                password: rows[0].Password
+                            }
+                            responder.success(cargo);
+                            iResult.send(controller.publish(responder.get()));
+                        } else {
+                            responder.failure('The email address or password you entered was wrong.');
+                            iResult.send(controller.publish(responder.get()));
                         }
-                        responder.success(cargo);
-                        iResult.send(controller.publish(responder.get()));
                     } else {
-                        responder.failure('The email address or password you entered was wrong.');
+                        responder.failure(err);
                         iResult.send(controller.publish(responder.get()));
                     }
-                } else {
-                    responder.failure(err);
-                    iResult.send(controller.publish(responder.get()));
-                }
-                connection.release();
-            });
+                    connection.release();
+                });
         });
     };
 
@@ -60,7 +60,7 @@ var Forgot = function (iPool) {
         session = new Δ.Session();
         controller = new Δ.Controller();
 
-        iRequest = req.params;
+        iRequest = req.body;
         iResult = res;
 
         payload = controller.process('forgot', iRequest);
